@@ -120,7 +120,7 @@ int Engine::window(Vei2 screenCoordinate)
 	double imaginary = graphYMin + (screenCoordinate.y * pixelZoom);
 	
 	return mandelbrotFunction(real, imaginary);
-	return juliaFunction(real, imaginary);
+	return juliaFunction(real, imaginary, cReal, cImaginary);
 }
 
 int Engine::mandelbrotFunction(double zX, double zY, double cX, double cY, int n)
@@ -129,7 +129,7 @@ int Engine::mandelbrotFunction(double zX, double zY, double cX, double cY, int n
 	double cYIterating = cX * cY * 2 + zY;
 	
 	if (cXIterating * cXIterating + cYIterating * cYIterating > 4)
-		return 16581375 - (10000000 / (sqrt(n)+1));
+		return 16581375 - (10000000 / (n + 1));
 
 	if (n > iterations)
 		return 0;
@@ -137,18 +137,18 @@ int Engine::mandelbrotFunction(double zX, double zY, double cX, double cY, int n
 	return mandelbrotFunction(zX, zY, cXIterating, cYIterating, n + 1);
 }
 
-int Engine::juliaFunction(double zX, double zY, int n)
+int Engine::juliaFunction(double zX, double zY, double cX, double cY, int n)
 {
-	double zXIterating = zX * zX - zY * zY + cReal;
-	double zYIterating = zX * zY * 2 + cImaginary;
+	double zXIterating = zX * zX - zY * zY + cX;
+	double zYIterating = zX * zY * 2 + cY;
 	
 	if (zXIterating * zXIterating + zYIterating * zYIterating > 4)
-		return 16581375 - (13000000 / (sqrt(n)+1)) + (3000 / (zX * zY));
+		return 16581375 - (13000000 / (n * n + 1));// +(3000 / (zX * zY));
 
 	if (n > iterations)
 		return 0;
 
-	return juliaFunction(zXIterating, zYIterating, n + 1);
+	return juliaFunction(zXIterating, zYIterating, cX, cY, n + 1);
 }
 
 void Engine::zoomCamera(float zoom)
