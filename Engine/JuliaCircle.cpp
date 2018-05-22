@@ -39,6 +39,11 @@ double JuliaCircle::getDistance(double x, double y)
 	return sqrt((real - x) * (real - x) + (imaginary - y) * (imaginary - y));
 }
 
+double JuliaCircle::getRadius()
+{
+	return radius;
+}
+
 //double JuliaCircle::getDistanceSquared(double x, double y)
 //{
 //	return (real - x) * (real - x) + (imaginary - y) * (imaginary - y);

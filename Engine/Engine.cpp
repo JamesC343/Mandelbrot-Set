@@ -85,18 +85,12 @@ void Engine::drawSets()
 	{
 		for (int j = 0; j < windowSize.y; j++)
 		{
-			point.x = i;
-			point.y = j;
-
-			double real = getPixelXValue(point.x);
-			double imaginary = getPixelYValue(point.y);
-
-			int result = mandelbrotFunction(real, imaginary);
-			//int result = mandelbrotFunctionX2(real, imaginary);
-			//int result = juliaFunction(real, imaginary, cReal, cImaginary);
+			int result = mandelbrotFunction(getPixelXValue(i), getPixelYValue(j));
+			//int result = mandelbrotFunctionX2(getPixelXValue(i), getPixelYValue(j));
+			//int result = juliaFunction(getPixelXValue(i), imaginary, cReal, getPixelYValue(j));
 
 			if (result > -1)
-				putPixel(point, result);
+				putPixel({ i,j }, result);
 		}
 	}
 }
@@ -104,7 +98,7 @@ void Engine::drawSets()
 void Engine::drawCircles()
 {
 	currentJuliaCircles.clear();
-	currentJuliaCircles.push_back(JuliaCircle(0, 0, sqrt((cReal * cReal) + (cImaginary * cImaginary)) / 2));
+	currentJuliaCircles.push_back(JuliaCircle(0, 0, .05));
 	juliaCircleFunction(cReal, cImaginary);
 
 	for (int i = 0; i < currentJuliaCircles.size(); i++)
@@ -118,7 +112,7 @@ void Engine::drawCircle(JuliaCircle circle)
 		for (int j = 0; j < windowSize.y; j++)
 		{
 			if (circle.contains(getPixelXValue(i), getPixelYValue(j)))
-				putPixel({ i,j }, 6581375);
+				putPixel({ i,j }, 1000000 + circle.getRadius() * 100000);
 		}
 	}
 }
@@ -216,11 +210,14 @@ int Engine::juliaCircleFunction(double cX, double cY, double zX, double zY, int 
 	double zXIterating = zX * zX - zY * zY + cX;
 	double zYIterating = zX * zY * 2 + cY;
 
+	if (zXIterating * zXIterating + zYIterating * zYIterating > 100)
+		return 16581375 - (13000000 / (n + 1));
+
 	//if any previous point contains this location
 	//return 16581375;
-	for (int i = 0; i < currentJuliaCircles.size(); i++)
-		if (currentJuliaCircles.at(i).contains(zXIterating, zYIterating))
-			return 16581375 - (13000000 / (n + 1));
+	//for (int i = 0; i < currentJuliaCircles.size(); i++)
+	//	if (currentJuliaCircles.at(i).contains(zXIterating, zYIterating))
+	//		return 16581375 - (13000000 / (n + 1));
 
 	if (n > iterations)
 		return 0;
@@ -233,8 +230,10 @@ int Engine::juliaCircleFunction(double cX, double cY, double zX, double zY, int 
 		JuliaCircle juliaCircle = currentJuliaCircles.at(i);
 
 		if (juliaCircle.getRadiusDistance(zXIterating, zYIterating) < radius)
-			radius = juliaCircle.getRadiusDistance(zXIterating, zYIterating) - pixelZoom;
+			radius = juliaCircle.getRadiusDistance(zXIterating, zYIterating);
 	}
+
+	radius = radius / (n + 5);
 
 	currentJuliaCircles.push_back(JuliaCircle(zXIterating, zYIterating, radius));
 

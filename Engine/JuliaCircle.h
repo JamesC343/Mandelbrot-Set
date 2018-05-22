@@ -8,6 +8,7 @@ public:
 	double getRadiusDistance(double, double);
 	//double getRadiusDistanceSquared(double, double);
 	double getDistance(double, double);
+	double getRadius();
 	//double getDistanceSquared(double, double);
 private:
 	double real;
