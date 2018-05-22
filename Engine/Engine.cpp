@@ -60,8 +60,8 @@ void Engine::UpdateModel()
 
 	if (!cLock)
 	{
-		cReal = wnd.mouse.GetPosX() * 0.01 - 2;
-		cImaginary = wnd.mouse.GetPosY() * 0.01 - 2;
+		cReal = wnd.mouse.GetPosX() * pixelZoom + graphXMin;
+		cImaginary = -(wnd.mouse.GetPosY() * pixelZoom + graphYMin);
 	}
 	else if( iterations < 1000)
 	{
@@ -72,7 +72,13 @@ void Engine::UpdateModel()
 void Engine::ComposeFrame()
 {
 	gfx->DrawSpriteNonChroma(0, 0, *test);
-	
+
+	drawSets();
+	//drawCircles();
+}
+
+void Engine::drawSets()
+{
 	Vei2 point(0, 0);
 
 	for (int i = 0; i < windowSize.x; i++)
@@ -82,10 +88,37 @@ void Engine::ComposeFrame()
 			point.x = i;
 			point.y = j;
 
-			int result = window(point);
+			double real = getPixelXValue(point.x);
+			double imaginary = getPixelYValue(point.y);
+
+			int result = mandelbrotFunction(real, imaginary);
+			//int result = mandelbrotFunctionX2(real, imaginary);
+			//int result = juliaFunction(real, imaginary, cReal, cImaginary);
 
 			if (result > -1)
 				putPixel(point, result);
+		}
+	}
+}
+
+void Engine::drawCircles()
+{
+	currentJuliaCircles.clear();
+	currentJuliaCircles.push_back(JuliaCircle(0, 0, sqrt((cReal * cReal) + (cImaginary * cImaginary)) / 2));
+	juliaCircleFunction(cReal, cImaginary);
+
+	for (int i = 0; i < currentJuliaCircles.size(); i++)
+		drawCircle(currentJuliaCircles.at(i));
+}
+
+void Engine::drawCircle(JuliaCircle circle)
+{
+	for (int i = 0; i < windowSize.x; i++)
+	{
+		for (int j = 0; j < windowSize.y; j++)
+		{
+			if (circle.contains(getPixelXValue(i), getPixelYValue(j)))
+				putPixel({ i,j }, 6581375);
 		}
 	}
 }
@@ -114,13 +147,14 @@ void Engine::putPixel(Vei2 pixel, int colorOption)
 	gfx->PutPixel(pixel.x, windowSize.y - pixel.y, Color(colorOption));
 }
 
-int Engine::window(Vei2 screenCoordinate)
+double Engine::getPixelXValue(int screenCoordinate)
 {
-	double real = graphXMin + (screenCoordinate.x * pixelZoom);
-	double imaginary = graphYMin + (screenCoordinate.y * pixelZoom);
-	
-	return mandelbrotFunction(real, imaginary);
-	return juliaFunction(real, imaginary, cReal, cImaginary);
+	return graphXMin + (screenCoordinate * pixelZoom);
+}
+
+double Engine::getPixelYValue(int screenCoordinate)
+{
+	return graphYMin + (screenCoordinate * pixelZoom);
 }
 
 int Engine::mandelbrotFunction(double zX, double zY, double cX, double cY, int n)
@@ -129,12 +163,38 @@ int Engine::mandelbrotFunction(double zX, double zY, double cX, double cY, int n
 	double cYIterating = cX * cY * 2 + zY;
 	
 	if (cXIterating * cXIterating + cYIterating * cYIterating > 4)
-		return 16581375 - (10000000 / (n + 1));
+		return 16581375 - (15000000 / iterations * n);
 
 	if (n > iterations)
 		return 0;
 
 	return mandelbrotFunction(zX, zY, cXIterating, cYIterating, n + 1);
+}
+
+int Engine::mandelbrotFunctionX2(double x, double y, int n)
+{
+	double xIterating = (y*y*y*y)
+		+ (x*x)
+		+ (x*x*x*x)
+		+ (x)
+		+ (2 * x*x*x)
+		- (6 * x*y*y)
+		- (6 * x*x*y*y)
+		- (y*y);
+	double yIterating = (y)
+		+ (2 * x*y)
+		+ (4 * x*x*x*x*y)
+		+ (6 * x*x*y)
+		- (4 * x*y*y*y)
+		- (2 * y*y*y);
+
+	if (xIterating * xIterating + yIterating * yIterating > 16)
+		return 16581375 - (10000000 / (n + 2));
+
+	if (n > iterations)
+		return 0;
+
+	return mandelbrotFunctionX2(xIterating, yIterating, n + 1);
 }
 
 int Engine::juliaFunction(double zX, double zY, double cX, double cY, int n)
@@ -149,6 +209,36 @@ int Engine::juliaFunction(double zX, double zY, double cX, double cY, int n)
 		return 0;
 
 	return juliaFunction(zXIterating, zYIterating, cX, cY, n + 1);
+}
+
+int Engine::juliaCircleFunction(double cX, double cY, double zX, double zY, int n)
+{
+	double zXIterating = zX * zX - zY * zY + cX;
+	double zYIterating = zX * zY * 2 + cY;
+
+	//if any previous point contains this location
+	//return 16581375;
+	for (int i = 0; i < currentJuliaCircles.size(); i++)
+		if (currentJuliaCircles.at(i).contains(zXIterating, zYIterating))
+			return 16581375 - (13000000 / (n + 1));
+
+	if (n > iterations)
+		return 0;
+	
+	//radius = smallest(distance - radius) of the previous points.
+	double radius = currentJuliaCircles.at(0).getRadiusDistance(zXIterating, zYIterating);
+
+	for (int i = 0; i < currentJuliaCircles.size(); i++)
+	{
+		JuliaCircle juliaCircle = currentJuliaCircles.at(i);
+
+		if (juliaCircle.getRadiusDistance(zXIterating, zYIterating) < radius)
+			radius = juliaCircle.getRadiusDistance(zXIterating, zYIterating) - pixelZoom;
+	}
+
+	currentJuliaCircles.push_back(JuliaCircle(zXIterating, zYIterating, radius));
+
+	return juliaCircleFunction(cX, cY, zXIterating, zYIterating, n + 1);
 }
 
 void Engine::zoomCamera(float zoom)

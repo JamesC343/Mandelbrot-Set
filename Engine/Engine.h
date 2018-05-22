@@ -5,6 +5,7 @@
 #include "Mouse.h"
 #include "Graphics.h"
 #include "Colors.h"
+#include "JuliaCircle.h"
 
 class Engine
 {
@@ -17,11 +18,17 @@ public:
 
 private:
 	void ComposeFrame();
+	void drawSets();
+	void drawCircles();
+	void drawCircle(JuliaCircle);
 	void UpdateModel();
 	void putPixel(Vei2,int);
-	int window(Vei2);
-	int mandelbrotFunction(double,double,double=0,double=0,int=0);
-	int juliaFunction(double,double,double,double,int=0);
+	double getPixelXValue(int);
+	double getPixelYValue(int);
+	int mandelbrotFunction(double, double, double = 0, double = 0, int = 0);
+	int mandelbrotFunctionX2(double, double, int = 0);
+	int juliaFunction(double, double, double, double, int = 0);
+	int juliaCircleFunction(double, double, double = 0, double = 0, int = 0);
 	void zoomCamera(float);
 
 private:
@@ -45,6 +52,8 @@ private:
 	Color drawColor = Colors::Red;
 
 	int iterations = 100;
+
+	std::vector<JuliaCircle> currentJuliaCircles;
 
 };
 
